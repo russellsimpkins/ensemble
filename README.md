@@ -4,7 +4,7 @@ Ensemble is a service for combining aggregate RestFUL requests in one call. It's
 
 To use this service you need to create you're own go http server e.g.
 
-{code}
+```go
 package main
 import (
 	"fmt"
@@ -33,12 +33,12 @@ func StartListener() {
 func main() {
 	StartListener()
 }
-{/code}
+```
 
 A lot of RestFUL APIs are written as CRUD services and this tool will let you glue API calls together.
 
 Here is the most basic example.
-
+```json
 {
     "requests": [{
         "id": "1",
@@ -52,9 +52,10 @@ Here is the most basic example.
     }],
     "strictorder": false
 }
-
+```
 The JSON specifies two calls and says that order is not important. The service will call each service and return the id, data and code. The id is there to help the caller identify each request. You can also have the service follow the order by setting "strictorder":true e.g.
 
+```json
 {
     "requests": [{
         "id": "1",
@@ -68,9 +69,10 @@ The JSON specifies two calls and says that order is not important. The service w
     }],
     "strictorder": true
 }
+```
 
 Assuming /test1 returns "This worked" and /test2 returns "That worked" your JSON response would look like this:
-
+```json
 {
     "reponses": [{
         "id": "1",
@@ -82,9 +84,9 @@ Assuming /test1 returns "This worked" and /test2 returns "That worked" your JSON
         "code": 200
     }]
 }
-
+```
 If /test2 returns JSON, it would look like this:  
-
+```json
 {
     "reponses": [{
         "id": "1",
@@ -96,9 +98,9 @@ If /test2 returns JSON, it would look like this:
         "code": 200
     }]
 }
-
+```
 You can also add dependency calls into the mix. Let's say you want a couple of calls to be made before your call to test2, and you want that data sent along. Let's assume that /provide1 returns {"is this":"magic?"} and /provide2 returns {"yup":"magic happens"} which you wanted posted to /test2 and you created the following request:
-
+```json
 {
     "requests": [{
         "id": "1",
@@ -128,4 +130,4 @@ You can also add dependency calls into the mix. Let's say you want a couple of c
     }],
     "strictorder": true
 }
-
+```
