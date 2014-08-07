@@ -369,4 +369,3 @@ func Handle(writer http.ResponseWriter, req *http.Request) {
 	body, _ = json.Marshal(res)
 	writer.Write(body);
 }
-

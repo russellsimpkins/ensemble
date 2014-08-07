@@ -131,3 +131,10 @@ You can also add dependency calls into the mix. Let's say you want a couple of c
     "strictorder": true
 }
 ```
+TODO
+==========
+- Add in manipulators. Manipulators would parse json responses and grab significant parts. The significant parts get re-arranged in the response. Manipulators could work for aggregates. 
+
+What if you want to grab data["field"]["item"][0]
+
+And put that into your response as resp["age"]

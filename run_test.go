@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"time"
 	"testing"
+	"encoding/json"	
 )
 
 func Wrap(writer http.ResponseWriter, req *http.Request) {
@@ -16,6 +17,41 @@ func Wrap(writer http.ResponseWriter, req *http.Request) {
 	return
 }
 
+
+func ProvideJson(writer http.ResponseWriter, req *http.Request) {
+	msg := `{"age":25,"weight":12}`
+	writer.Write([]byte(msg));
+}
+func ProvideJsonAge(writer http.ResponseWriter, req *http.Request) {
+	msg := `{"age":25}`
+	writer.Write([]byte(msg));
+}
+func ProvideJsonHeight(writer http.ResponseWriter, req *http.Request) {
+	msg := `{"height":"72"}`
+	writer.Write([]byte(msg));
+}
+type Height struct {
+	Height int `json:height`
+}
+type HeightStr struct {
+	Height string `json:height`
+}
+func ProvideJsonHeightString(writer http.ResponseWriter, req *http.Request) {
+	var (
+		heighti Height
+		height int
+		result HeightStr
+		hstr string
+	)
+	msg, _ := ioutil.ReadAll(req.Body)
+	_ = json.Unmarshal(msg, &heighti)
+	height = int(heighti.Height)
+	hstr = fmt.Sprintf("\"%i' %i\"", (height/12), (height%12))
+	result = HeightStr{}
+	result.Height = hstr
+	b,_  := json.Marshal(result)
+	writer.Write(b);
+}
 func Provide1(writer http.ResponseWriter, req *http.Request) {
 	writer.Write([]byte("{\"is this\":\"magic?\"}"))
 }
@@ -91,7 +127,7 @@ func TestCallHandle(t *testing.T) {
 
 	header.Add("Content-Type",contentType)
 	//header = nil
-	//fmt.Printf("I'm using %s method to this url %s\n", method, url)
+	t.Logf("I'm using %s method to this url %s\n", method, url)
 	response, responseCode, _, err = MakeRequest(&url,&method,header,&data)
 	if err != nil {
 		fmt.Println()
