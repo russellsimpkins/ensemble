@@ -1,6 +1,8 @@
 package ensemble
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,9 +11,9 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"errors"
-	"encoding/json"
 )
+
+const DefaultTimeout = 10 * time.Second
 
 func HowTo() (msg string) {
 	msg = `This service orchestrates RestFUL API calls. You come up with a set of RestFUL API calls
@@ -31,7 +33,7 @@ func HowTo() (msg string) {
     "strictorder": false
 }
 
-This will call either call each request, but is not guaranteed to be in the order you specify. Order is done using the json. 
+This will call either call each request, but is not guaranteed to be in the order you specify. Order is done using the json.
 The id is there to identify each request. You can make the call follow the order by setting "strictorder":true e.g.
 
 {
@@ -111,8 +113,8 @@ func MakeRequest(url *string, method *string, header *http.Header, rawData *stri
 	*method = strings.ToUpper(*method)
 	if !IsValidHTTPMethod(method) {
 		result = "Invalid HTTP Method requested"
-		code   = 500
-		err    = errors.New(result)
+		code = 500
+		err = errors.New(result)
 		return
 	}
 
@@ -141,8 +143,8 @@ func MakeRequest(url *string, method *string, header *http.Header, rawData *stri
 	if err != nil {
 		return empty, 500, nil, err
 	}
-	hdr       = resp.Header
-	code      = resp.StatusCode
+	hdr = resp.Header
+	code = resp.StatusCode
 	body, err = ioutil.ReadAll(resp.Body)
 	result = string(body)
 	return
@@ -154,7 +156,7 @@ func replaceHeader(req *Request, header *http.Header) {
 	for name, vals := range req.Headers {
 		header.Del(name)
 		for _, val := range vals {
-			header.Add(name,val)
+			header.Add(name, val)
 		}
 	}
 }
@@ -162,15 +164,15 @@ func replaceHeader(req *Request, header *http.Header) {
 // process request dependencies
 func ProcessDependencies(req *Request, resp *Response, header *http.Header) {
 	var (
-		err error
+		err        error
 		respHeader http.Header
 	)
 
-	deps    := req.Depends
+	deps := req.Depends
 	results := make([]string, len(deps))
 	for index, dep := range deps {
-		dep  := dep
-		code := 0				
+		dep := dep
+		code := 0
 		results[index], code, respHeader, err = MakeRequest(&dep.Request.URL, &dep.Request.Method, header, &dep.Request.Payload)
 		if code != 200 || err != nil {
 			resp.Id = dep.Request.Id
@@ -182,16 +184,16 @@ func ProcessDependencies(req *Request, resp *Response, header *http.Header) {
 
 	if req.UseData {
 		if req.DoJoin {
-			s := fmt.Sprintf(req.Payload, strings.Join(results,req.JoinChar))
+			s := fmt.Sprintf(req.Payload, strings.Join(results, req.JoinChar))
 			req.Payload = s
-			
+
 		}
 	}
 
 	if req.UseDepHeader && len(req.DepHeader) > 0 {
-		for _,name := range req.DepHeader {
+		for _, name := range req.DepHeader {
 			header.Del(name)
-			header.Add(name,respHeader.Get(name))
+			header.Add(name, respHeader.Get(name))
 		}
 	}
 }
@@ -200,11 +202,11 @@ func ProcessDependencies(req *Request, resp *Response, header *http.Header) {
 func AsyncRequest(req *Request, resp *Response, header *http.Header, c chan int) {
 
 	var (
-		err error
-		hd http.Header
+		err          error
+		hd           http.Header
 		returnObject interface{}
 	)
-	
+
 	hd = *header
 	if req.Headers != nil {
 		replaceHeader(req, &hd)
@@ -221,41 +223,41 @@ func AsyncRequest(req *Request, resp *Response, header *http.Header, c chan int)
 	resp.Id = req.Id
 	resp.Code = 404
 	resp.Payload = `{"reason":"Request timed out"}`
-	resp.Payload, resp.Code, _, err = MakeRequest(&req.URL, &req.Method, &hd, &req.Payload)	
+	resp.Payload, resp.Code, _, err = MakeRequest(&req.URL, &req.Method, &hd, &req.Payload)
 	if err != nil {
 		msg := `{"reason":"%s"}`
-		msg = fmt.Sprintf(msg,err.Error)
+		msg = fmt.Sprintf(msg, err.Error)
 		resp.Payload = msg
 	} else {
 		if req.EvalRespJson {
 			returnObject = new(interface{})
-			err = json.Unmarshal([]byte(resp.Payload),returnObject)
+			err = json.Unmarshal([]byte(resp.Payload), returnObject)
 			if err != nil {
 				msg := `{"reason":"%s"}`
-				msg = fmt.Sprintf(msg,err.Error())
-				json.Unmarshal([]byte(msg),returnObject)
+				msg = fmt.Sprintf(msg, err.Error())
+				json.Unmarshal([]byte(msg), returnObject)
 				fmt.Println("", err)
 			}
 			resp.Object = returnObject
 		}
 	}
-	c<- 0
-	
+	c <- 0
+
 }
 
 // for maying syncronous requests
 func SyncRequest(req *Request, resp *Response, header *http.Header) {
 	var (
-		err error
-		hd http.Header
+		err          error
+		hd           http.Header
 		returnObject interface{}
 	)
-	
+
 	hd = *header
 	if req.Headers != nil {
 		replaceHeader(req, &hd)
 	}
-	
+
 	replaceHeader(req, &hd)
 	if req.Depends != nil {
 		resp.Code = 200
@@ -272,7 +274,7 @@ func SyncRequest(req *Request, resp *Response, header *http.Header) {
 	} else {
 		if req.EvalRespJson {
 			returnObject = new(interface{})
-			err = json.Unmarshal([]byte(resp.Payload),returnObject)
+			err = json.Unmarshal([]byte(resp.Payload), returnObject)
 			if err != nil {
 				fmt.Println("Doh: ", err)
 			}
@@ -282,27 +284,12 @@ func SyncRequest(req *Request, resp *Response, header *http.Header) {
 }
 
 func ProcessJson(job *ApiWrapper, header *http.Header) (res Result, err error) {
-	var (
-		c chan int
-		dur time.Duration
-	)
 
-	c = make(chan int)
+	c := make(chan int, len(job.Requests))
 	res.Responses = make([]Response, len(job.Requests))
 
-	// create a timeout so we don't wait forever
-	timeout := make(chan bool, 1)
-	dur     = time.Duration(10)
-	if job.Timeout > 0 {
-		dur = time.Duration(job.Timeout)
-	}
-	go func() {
-		time.Sleep(dur * time.Second)
-		timeout <- true
-	}()
-	
 	for index, _ := range job.Requests {
-		if job.SyncOrder {			
+		if job.SyncOrder {
 			SyncRequest(&job.Requests[index], &res.Responses[index], header)
 			if res.Responses[index].Code != 200 {
 				msg := `{"reason":"%s"}`
@@ -315,29 +302,40 @@ func ProcessJson(job *ApiWrapper, header *http.Header) (res Result, err error) {
 		}
 	}
 
-	// if async, wait for our response or timeout 
+	// if async, wait for our response or timeout
 	if !job.SyncOrder {
+
+		// create a timeout so we don't wait forever
+		var timeout <-chan time.Time
+		if job.Timeout > 0 {
+			timeout = time.After(time.Duration(job.Timeout))
+		} else {
+			timeout = time.After(DefaultTimeout)
+		}
+
 		for index := 0; index < len(job.Requests); index++ {
 			select {
-			case <-c :
-			case <-timeout :
+			case <-c:
+			case <-timeout:
 				log.Print("We timed out")
 				break
 			}
 		}
+
 	}
+
 	return
 }
-	
+
 /**
- * Basic handle function is called on each http request. 
+ * Basic handle function is called on each http request.
  */
 func Handle(writer http.ResponseWriter, req *http.Request) {
-	
+
 	var (
-		job ApiWrapper
-		err error
-		res Result
+		job  ApiWrapper
+		err  error
+		res  Result
 		body []byte
 	)
 
@@ -351,14 +349,14 @@ func Handle(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	err = json.Unmarshal(body, &job)
-	
+
 	if err != nil {
 		str := fmt.Sprintf("[ERROR] Unable to parse JSON: %s", err)
 		http.Error(writer, str, 500)
 		return
 	}
 
-	res, err = ProcessJson(&job,&req.Header)
+	res, err = ProcessJson(&job, &req.Header)
 
 	if err != nil {
 		str := fmt.Sprintf("[ERROR] Unable to process request(s): %s", err)
@@ -367,5 +365,5 @@ func Handle(writer http.ResponseWriter, req *http.Request) {
 	}
 
 	body, _ = json.Marshal(res)
-	writer.Write(body);
+	writer.Write(body)
 }
