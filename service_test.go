@@ -30,13 +30,12 @@ func TestIsValidHTTPMethod(t *testing.T) {
 
 func TestMakeJsonData(t *testing.T) {
 	var (
-		api *ApiWrapper
-		req []Request
+		api  *ApiWrapper
+		req  []Request
 		item []string
 	)
 
-	api = &ApiWrapper{
-	}
+	api = &ApiWrapper{}
 	item = make([]string, 1)
 	req = make([]Request, 2)
 	req[0].Id = "1"
@@ -44,7 +43,7 @@ func TestMakeJsonData(t *testing.T) {
 	req[0].Method = "GET"
 	req[0].Payload = "foo=bar"
 	req[0].Headers = make(map[string][]string, 1)
-	item[0]  = "application/x-www-form-urlencoded"
+	item[0] = "application/x-www-form-urlencoded"
 	req[0].Headers["Content-Type"] = item
 	req[1].Id = "2"
 	req[1].URL = "http://localhost/test2.php"
