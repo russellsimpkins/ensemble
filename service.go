@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const DefaultTimeout = 10 * time.Second
+
 func HowTo() (msg string) {
 	msg = `This service orchestrates RestFUL API calls. You come up with a set of RestFUL API calls
  you want to make, put them into JSON encoding according to our format and you call this. Here is the most basic example.
@@ -282,24 +284,9 @@ func SyncRequest(req *Request, resp *Response, header *http.Header) {
 }
 
 func ProcessJson(job *ApiWrapper, header *http.Header) (res Result, err error) {
-	var (
-		c   chan int
-		dur time.Duration
-	)
 
-	c = make(chan int)
+	c := make(chan int, len(job.Requests))
 	res.Responses = make([]Response, len(job.Requests))
-
-	// create a timeout so we don't wait forever
-	timeout := make(chan bool, 1)
-	dur = time.Duration(10)
-	if job.Timeout > 0 {
-		dur = time.Duration(job.Timeout)
-	}
-	go func() {
-		time.Sleep(dur * time.Second)
-		timeout <- true
-	}()
 
 	for index, _ := range job.Requests {
 		if job.SyncOrder {
@@ -317,6 +304,15 @@ func ProcessJson(job *ApiWrapper, header *http.Header) (res Result, err error) {
 
 	// if async, wait for our response or timeout
 	if !job.SyncOrder {
+
+		// create a timeout so we don't wait forever
+		var timeout <-chan time.Time
+		if job.Timeout > 0 {
+			timeout = time.After(time.Duration(job.Timeout))
+		} else {
+			timeout = time.After(DefaultTimeout)
+		}
+
 		for index := 0; index < len(job.Requests); index++ {
 			select {
 			case <-c:
@@ -325,7 +321,9 @@ func ProcessJson(job *ApiWrapper, header *http.Header) (res Result, err error) {
 				break
 			}
 		}
+
 	}
+
 	return
 }
 
