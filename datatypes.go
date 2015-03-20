@@ -51,5 +51,5 @@ type Response struct {
 }
 
 type Result struct {
-	Responses []Response `json:"reponses"`
+	Responses []Response `json:"responses"`
 }
