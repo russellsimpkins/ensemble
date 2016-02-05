@@ -111,9 +111,9 @@ func TestCallHandle(t *testing.T) {
 	header.Add("Content-Type", contentType)
 	//header = nil
 	t.Logf("I'm using %s method to this url %s\n", method, url)
-	req := Request{URL: url, Method: method, Header: *header, Data: data}
-	res := new(Response)
-	err = MakeRequest(&req, res)
+	req := &Request{URL: url, Method: method, Header: *header, Data: data}
+	res := &Response{}
+	err = MakeRequest(req, res)
 	if err != nil {
 		fmt.Println()
 		fmt.Printf("Code: %v. Response: %s\n", responseCode, response)
