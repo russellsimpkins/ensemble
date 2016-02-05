@@ -54,26 +54,8 @@ func ProvideJsonHeightString(writer http.ResponseWriter, req *http.Request) {
 	b, _ := json.Marshal(result)
 	writer.Write(b)
 }
-func Provide1(writer http.ResponseWriter, req *http.Request) {
-	writer.Write([]byte("{\"is this\":\"magic?\"}"))
-}
 
-func Provide2(writer http.ResponseWriter, req *http.Request) {
-	writer.Write([]byte("{\"yup\":\"magic happens\"}"))
-}
-
-func ATest1(writer http.ResponseWriter, req *http.Request) {
-	writer.Write([]byte("This worked"))
-	return
-}
-
-func ATest2(writer http.ResponseWriter, req *http.Request) {
-	body, _ := ioutil.ReadAll(req.Body)
-	writer.Write(body)
-	return
-}
-
-func StartListener() {
+func StartListening() {
 	http.HandleFunc("/test", Handle)
 	http.HandleFunc("/test1", ATest1)
 	http.HandleFunc("/test2", ATest2)
@@ -108,7 +90,7 @@ func TestCallHandle(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	go StartListener()
+	go StartListening()
 	//url = "http://localhost/test.php?a=b"
 	url = "http://localhost:8080/test"
 	method = "post"
@@ -129,7 +111,9 @@ func TestCallHandle(t *testing.T) {
 	header.Add("Content-Type", contentType)
 	//header = nil
 	t.Logf("I'm using %s method to this url %s\n", method, url)
-	response, responseCode, _, err = MakeRequest(&url, &method, header, &data)
+	req := Request{URL: url, Method: method, Header: *header, Data: data}
+	res := new(Response)
+	err = MakeRequest(&req, res)
 	if err != nil {
 		fmt.Println()
 		fmt.Printf("Code: %v. Response: %s\n", responseCode, response)
