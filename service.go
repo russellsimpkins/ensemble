@@ -6,15 +6,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-	// go-kit imports
 	"github.com/go-kit/kit/endpoint"
+	log "github.com/sirupsen/logrus"
 )
 
 const DefaultTimeout = 10 * time.Second
