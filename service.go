@@ -1,6 +1,7 @@
 package ensemble
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,7 +15,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 	// go-kit imports
 	"github.com/go-kit/kit/endpoint"
-	"golang.org/x/net/context"
 )
 
 const DefaultTimeout = 10 * time.Second
@@ -335,66 +335,66 @@ func Help() (msg string) {
  you want to make, put them into JSON encoding according to our format and you call this. Here is the most basic example.
 
 {
-    "requests": [{
-        "id": "1",
-        "url": "http://localhost:8080/test1?foo=bar",
-        "method": "GET"
-    }, {
-        "id": "2",
-        "url": "http://localhost:8080/test2",
-        "method": "POST",
-        "data": "boo=far"
-    }],
-    "strictorder": false
+	"requests": [{
+		"id": "1",
+		"url": "http://localhost:8080/test1?foo=bar",
+		"method": "GET"
+	}, {
+		"id": "2",
+		"url": "http://localhost:8080/test2",
+		"method": "POST",
+		"data": "boo=far"
+	}],
+	"strictorder": false
 }
 
 This will call each request, but is not guaranteed to be in the order you specify. Order is done using the json. The id is there to identify each request. You can make the call follow the order by setting "strictorder":true e.g.
 
 {
-    "requests": [{
-        "id": "1",
-        "url": "http://localhost:8080/test1?foo=bar",
-        "method": "GET"
-    }, {
-        "id": "2",
-        "url": "http://localhost:8080/test2",
-        "method": "POST",
-        "data": "boo=far"
-    }],
-    "strictorder": false
+	"requests": [{
+		"id": "1",
+		"url": "http://localhost:8080/test1?foo=bar",
+		"method": "GET"
+	}, {
+		"id": "2",
+		"url": "http://localhost:8080/test2",
+		"method": "POST",
+		"data": "boo=far"
+	}],
+	"strictorder": false
 }
 
 You can also add dependency calls into the mix. Let's say you want an API call done before you make your call to call id=2
 
 {
-    "requests": [{
-        "id": "1",
-        "url": "http://localhost:8080/test1",
-        "method": "GET",
-        "dependency": null
-    }, {
-        "id": "2",
-        "url": "http://localhost:8080/test2",
-        "method": "POST",
-        "data": "%s",
-        "dependency": [{
-            "request": {
-                "id": "21",
-                "url": "http://localhost:8080/provide1",
-                "method": "GET"
-            }
-        }, {
-            "request": {
-                "id": "22",
-                "url": "http://localhost:8080/provide2",
-                "method": "GET"
-            }
-        }],
-        "useData": true,
-        "doJoin": true,
-        "joinChar": ","
-    }],
-    "strictorder": true
+	"requests": [{
+		"id": "1",
+		"url": "http://localhost:8080/test1",
+		"method": "GET",
+		"dependency": null
+	}, {
+		"id": "2",
+		"url": "http://localhost:8080/test2",
+		"method": "POST",
+		"data": "%s",
+		"dependency": [{
+			"request": {
+				"id": "21",
+				"url": "http://localhost:8080/provide1",
+				"method": "GET"
+			}
+		}, {
+			"request": {
+				"id": "22",
+				"url": "http://localhost:8080/provide2",
+				"method": "GET"
+			}
+		}],
+		"useData": true,
+		"doJoin": true,
+		"joinChar": ","
+	}],
+	"strictorder": true
 }`
 	return
 }
